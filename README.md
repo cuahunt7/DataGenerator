@@ -31,7 +31,7 @@ Since sensitive data such as API keys and credentials should not be tracked by G
 
 * Edit the .`env` File: Open the `.env` file in a text editor of your choice:
     ```bash
-    code .env
+    nano .env
     ```
 
 * Replace the placeholder values with your actual credentials.
