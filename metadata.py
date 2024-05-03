@@ -14,8 +14,8 @@ def extract_and_upload_metadata(data, algorithm_name, bucket_name, file_path, s3
     table = dynamodb.Table('DatasetMetadata')
 
     dataset_name = input("What is the dataset name? ")
-    topic = input("Enter the topic (1 for Health, 2 for Finance, 3 for Environment, 4 for Technology): ")
-    topics = {1: "Health", 2: "Finance", 3: "Environment", 4: "Technology"}
+    topic = input("Enter the topic (1 for Health, 2 for Finance, 3 for Entertainment, 4 for Technology, 5 for Education): ")
+    topics = {1: "Health", 2: "Finance", 3: "Entertainment", 4: "Technology", 5: "Education"}
     source_link = input("Enter the source link: ")
     size_in_kb = os.path.getsize(file_path) // 1024 
     

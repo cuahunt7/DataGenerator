@@ -172,9 +172,8 @@ def validate_knn(X_train, X_test, y_train, y_test):
     else:
         print("Dataset may not be suitable for KNN. Consider reviewing the data.")
         return False
-    
 
-def dynamic_preprocess(data, target_variable=None,correlation_threshold=0.85):
+def dynamic_preprocess(data, target_variable=None, correlation_threshold=0.85):
     # Identifying numeric and categorical columns
     numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
     categorical_cols = data.select_dtypes(include=['object', 'category']).columns.tolist()
@@ -189,35 +188,51 @@ def dynamic_preprocess(data, target_variable=None,correlation_threshold=0.85):
     # Initial processing lists
     processed_columns = []
     data_processed_list = []
+    cleaned_data_list = []
+    cleaned_columns = []
 
     # Processing numeric columns
     for col in numeric_cols:
         skewness = data[col].skew()
         strategy = 'mean' if abs(skewness) < 1 else 'median'
-        # print(f"Column: {col}, Skewness: {skewness:.2f}, Imputation strategy: {strategy}")
+        
+        # Processing for cleaned data (only imputation)
+        imputer = SimpleImputer(strategy=strategy)
+        cleaned_data = imputer.fit_transform(data[[col]])
+        cleaned_data_list.append(cleaned_data)
+        cleaned_columns.append(col)
 
+        # Full processing for transformed data
         numeric_transformer = Pipeline([
             ('imputer', SimpleImputer(strategy=strategy)),
             ('scaler', MinMaxScaler())
         ])
-
         processed_data = numeric_transformer.fit_transform(data[[col]])
         data_processed_list.append(processed_data)
         processed_columns.append(col)
 
     # Processing categorical columns with imputation and one-hot encoding
     if categorical_cols:
+        categorical_cleaner = Pipeline([
+            ('imputer', SimpleImputer(strategy='constant', fill_value='Missing'))
+        ])
+        cat_data = data[categorical_cols]
+        cleaned_cat_data = categorical_cleaner.fit_transform(cat_data)
+        cleaned_data_list.append(cleaned_cat_data)
+        cleaned_columns.extend(categorical_cols)
+
         categorical_transformer = Pipeline([
             ('imputer', SimpleImputer(strategy='constant', fill_value='Missing')),
             ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
         ])
-
-        cat_data = data[categorical_cols]
         processed_data = categorical_transformer.fit_transform(cat_data)
         data_processed_list.append(processed_data)
         processed_columns.extend(categorical_transformer.named_steps['onehot'].get_feature_names_out(categorical_cols))
 
-    # Concatenate all processed columns
+    # Concatenate all processed columns for both clean and transformed data
+    clean_data = np.hstack(cleaned_data_list)
+    clean_df = pd.DataFrame(clean_data, columns=cleaned_columns)
+    
     data_processed = np.hstack(data_processed_list)
     processed_df = pd.DataFrame(data_processed, columns=processed_columns)
 
@@ -227,18 +242,24 @@ def dynamic_preprocess(data, target_variable=None,correlation_threshold=0.85):
     to_drop = [column for column in upper.columns if any(upper[column] > correlation_threshold)]
     processed_df.drop(columns=to_drop, inplace=True)
 
-    if target_variable and data[target_variable].nunique() == 2:
-        le = LabelEncoder()
-        processed_df[target_variable] = le.fit_transform(data[target_variable])
-    else:
-        processed_df[target_variable] = data[target_variable]
+    if target_variable and target_variable in data.columns:
+        target_strategy = 'most_frequent' if data[target_variable].dtype == 'object' else 'median'
+        target_imputer = SimpleImputer(strategy=target_strategy)
+        target_values = target_imputer.fit_transform(data[[target_variable]].astype(str) if data[target_variable].dtype == 'object' else data[[target_variable]])
+        clean_df[target_variable] = target_values.ravel()
+        processed_df[target_variable] = clean_df[target_variable]  # No transformation other than imputation
 
-    return processed_df
+        if data[target_variable].nunique() == 2 and data[target_variable].dtype == 'object':
+            le = LabelEncoder()
+            clean_df[target_variable] = le.fit_transform(clean_df[target_variable])
+            processed_df[target_variable] = clean_df[target_variable]
+
+    return clean_df, processed_df
 
 def validator(data, algorithm_index, target_variable):
     constant_columns = [col for col in data.columns if data[col].nunique() == 1]
     data.drop(constant_columns, axis=1, inplace=True)
-    data_processed = dynamic_preprocess(data, target_variable)
+    clean_df, data_processed = dynamic_preprocess(data, target_variable)
 
     X = data_processed.drop(target_variable, axis=1)
     y = data_processed[target_variable]
@@ -247,8 +268,8 @@ def validator(data, algorithm_index, target_variable):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=stratify_option, random_state=42)
 
     if algorithm_index == 1:
-        return validate_linear_regression(X_train, X_test, y_train, y_test)
+        return clean_df, validate_linear_regression(X_train, X_test, y_train, y_test)
     elif algorithm_index == 2:
-        return validate_random_forest(X_train, X_test, y_train, y_test)
+        return clean_df, validate_random_forest(X_train, X_test, y_train, y_test)
     elif algorithm_index == 3:
-        return validate_knn(X_train, X_test, y_train, y_test)
+        return clean_df, validate_knn(X_train, X_test, y_train, y_test)
