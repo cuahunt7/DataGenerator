@@ -37,3 +37,4 @@ def extract_and_upload_metadata(data, algorithm_name, bucket_name, file_path, s3
         print("Metadata uploaded successfully to DynamoDB.")
     except Exception as e:
         print(f"Failed to upload metadata: {e}")
+
