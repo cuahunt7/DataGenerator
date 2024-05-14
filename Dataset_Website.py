@@ -1,7 +1,67 @@
 import streamlit as st
 import pandas as pd
-import hashlib
-from web_implementation import generate_presigned_url, fetch_dataset_metadata, make_dataset_unclean, s3_client
+import boto3
+import logging
+from web_implementation import generate_presigned_url, fetch_dataset_metadata, make_dataset_unclean
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Load AWS Cognito configuration from environment variables
+COGNITO_USER_POOL_ID = os.getenv("COGNITO_USER_POOL_ID")
+COGNITO_APP_CLIENT_ID = os.getenv("COGNITO_APP_CLIENT_ID")
+COGNITO_IDENTITY_POOL_ID = os.getenv("COGNITO_IDENTITY_POOL_ID")
+AWS_DEFAULT_REGION = os.getenv("AWS_DEFAULT_REGION")
+
+cognito_client = boto3.client('cognito-idp', region_name=AWS_DEFAULT_REGION)
+identity_client = boto3.client('cognito-identity', region_name=AWS_DEFAULT_REGION)
+
+# Cognito signup and signin functions
+def signup_user(email, password):
+    try:
+        response = cognito_client.sign_up(
+            ClientId=COGNITO_APP_CLIENT_ID,
+            Username=email,
+            Password=password,
+            UserAttributes=[
+                {'Name': 'email', 'Value': email}
+            ]
+        )
+        cognito_client.admin_confirm_sign_up(
+            UserPoolId=COGNITO_USER_POOL_ID,
+            Username=email
+        )
+        return response
+    except Exception as e:
+        logging.error(f"Error signing up: {e}")
+        return None
+
+def authenticate_user(email, password):
+    try:
+        response = cognito_client.initiate_auth(
+            ClientId=COGNITO_APP_CLIENT_ID,
+            AuthFlow='USER_PASSWORD_AUTH',
+            AuthParameters={
+                'USERNAME': email,
+                'PASSWORD': password
+            }
+        )
+        logging.info(f"Authentication response: {response}")
+        return response
+    except cognito_client.exceptions.NotAuthorizedException:
+        logging.error("The username or password is incorrect")
+        return None
+    except cognito_client.exceptions.UserNotConfirmedException:
+        logging.error("User is not confirmed")
+        return None
+    except Exception as e:
+        logging.error(f"Error authenticating: {e}")
+        return None
 
 # Custom styles
 st.markdown("""
@@ -73,34 +133,13 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
-def check_username(username, df):
-    return username in df['username'].values
-
-def verify_login(username, password, df):
-    user = df[df['username'] == username]
-    if not user.empty:
-        return user.iloc[0]['password'] == hash_password(password)
-    return False
-
-def register_user(username, password, df):
-    new_user = pd.DataFrame({'username': [username], 'password': [hash_password(password)]})
-    df = pd.concat([df, new_user], ignore_index=True)
-    df.to_csv('user_credentials.csv', index=False)
-
-try:
-    user_credentials = pd.read_csv('user_credentials.csv')
-except FileNotFoundError:
-    user_credentials = pd.DataFrame(columns=['username', 'password'])
-
 # Initialize session state
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
-if 'username' not in st.session_state:
-    st.session_state['username'] = ''
+if 'email' not in st.session_state:
+    st.session_state['email'] = ''
+if 'id_token' not in st.session_state:
+    st.session_state['id_token'] = ''
 if 'menu' not in st.session_state:
     st.session_state['menu'] = 'Home'
 
@@ -113,10 +152,11 @@ def main():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.session_state['logged_in']:
-            st.markdown(f"**Welcome, {st.session_state['username']}!**", unsafe_allow_html=True)
+            st.markdown(f"**Welcome, {st.session_state['email']}!**", unsafe_allow_html=True)
             if st.button("Sign Off", key="sign_off"):
                 st.session_state['logged_in'] = False
-                st.session_state['username'] = ''
+                st.session_state['email'] = ''
+                st.session_state['id_token'] = ''
                 st.session_state['menu'] = 'Home'
         else:
             col_login, col_signup = st.columns(2)
@@ -131,28 +171,31 @@ def main():
     if not st.session_state['logged_in']:
         if st.session_state['menu'] == "Login":
             st.subheader("Login")
-            username = st.text_input("Username")
+            email = st.text_input("Email")
             password = st.text_input("Password", type='password')
             if st.button("Login", key="login_page_login"):
-                if verify_login(username, password, user_credentials):
+                response = authenticate_user(email, password)
+                if response:
                     st.session_state['logged_in'] = True
-                    st.session_state['username'] = username
-                    st.success(f'Welcome, {username}!')
+                    st.session_state['email'] = email
+                    st.session_state['id_token'] = response['AuthenticationResult']['IdToken']
+                    st.success(f'Welcome, {email}!')
                 else:
-                    st.error("Invalid username or password")
+                    st.error("Invalid email or password")
         elif st.session_state['menu'] == "Signup":
             st.subheader("Create New Account")
-            new_username = st.text_input("Choose Username", key="new_username")
+            new_email = st.text_input("Email", key="new_email")
             new_password = st.text_input("Choose Password", type='password', key="new_password")
             confirm_password = st.text_input("Confirm Password", type='password', key="confirm_password")
             if st.button("Signup", key="signup_page_signup"):
                 if new_password != confirm_password:
                     st.error("Passwords do not match")
-                elif check_username(new_username, user_credentials):
-                    st.error("Username already exists")
                 else:
-                    register_user(new_username, new_password, user_credentials)
-                    st.success(f"Account created successfully for {new_username}")
+                    response = signup_user(new_email, new_password)
+                    if response:
+                        st.success(f"Account created successfully for {new_email}")
+                    else:
+                        st.error("Failed to create account")
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -195,7 +238,7 @@ def main():
                     dataset_preview = pd.read_csv(dataset_link)
                     if cleanliness == 'Unclean':
                         dataset_preview = make_dataset_unclean(dataset_preview)
-                    st.dataframe(dataset_preview.head(51))
+                    st.dataframe(dataset_preview.head(50))
                 else:
                     st.error("Failed to generate a download link. Please try again.")
             else:
