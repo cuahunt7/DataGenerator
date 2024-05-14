@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 import validator
-from database import upload_csv_to_s3, generate_presigned_url, check_dataset_exists
+from database import upload_csv_to_s3, check_dataset_exists
 from metadata import extract_and_upload_metadata
 
 
@@ -65,23 +65,17 @@ def main():
         print("\n" + "*" * 20 + "\n")
         clean_df, valid = validator.validator(data, algorithm_index, target_variable)
         if valid:
-            print("\n" + "*" * 20 + "\n")
-            print("***This dataset has passed the checks***")
-            print("***Uploading it to S3***")
             object_key = upload_csv_to_s3(clean_df, "capstonedatasets", folder_route, path)
             if object_key:
-                s3_link = generate_presigned_url("capstonedatasets", object_key)
-                print("\n" + "*" * 20 + "\n")
                 print(f"*** Dataset uploaded successfully. ***")
-                print("***Extracting metadata and uploading to DynamoDB and S3***")
-                extract_and_upload_metadata(clean_df, algorithm_name, "capstonedatasets", path, s3_link, target_variable)  # Pass target_variable here
+                print("*** Extracting metadata and uploading to DynamoDB ***")
+                extract_and_upload_metadata(clean_df, algorithm_name, "capstonedatasets", path, object_key, target_variable)
                 break  # Exit the loop since validation passed and file is uploaded
             else:
-                print("*** Failed to generate a valid presigned URL ***")
+                print("*** Failed to upload file to S3 ***")
         else:
-            print("*** Failed to upload file to S3 ***")
+            print("*** Dataset validation failed ***")
 
 if __name__ == "__main__":
     main()
-
 
