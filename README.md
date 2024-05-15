@@ -133,6 +133,5 @@ DynamoDB is used to store metadata about the datasets.
 Add the DynamoDB table name to your .env file:
 
 ```plaintext
-DYNAMODB_TABLE_NAME=DatasetMetadata
-
+DYNAMODB_TABLE_NAME=dynamodb_table_name_here
 ```
