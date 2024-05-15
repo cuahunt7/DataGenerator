@@ -26,34 +26,12 @@ def main():
         algorithms = {1: "linear-regression", 2: "random-forest", 3: "k-nearest-neighbors"}
         algorithm_name = algorithms[algorithm_index]
 
-        # Algorithm suitability checks
-        if algorithm_name == "random-forest":
-            # Check if the target variable is continuous for random forest
-            if pd.api.types.is_numeric_dtype(data[target_variable]):
-                unique_values = data[target_variable].nunique()
-                if unique_values > 10:
-                    print("\n" + "*" * 20 + "\n")
-                    print(f"*** The selected target variable '{target_variable}' is continuous and not suitable for random forest classification. ***")
-                    print("*** Please select a different algorithm or choose a categorical target variable. ***")
-                    continue
+        if not algorithm_name:
+            print("Invalid algorithm selection.")
+            return
 
-        elif algorithm_name == "linear-regression":
-            # Ensure the target variable is continuous for linear regression
-            if not pd.api.types.is_numeric_dtype(data[target_variable]):
-                print("\n" + "*" * 20 + "\n")
-                print(f"*** The selected target variable '{target_variable}' is not continuous and not suitable for linear regression. ***")
-                print("*** Please select a different algorithm or choose a continuous target variable. ***")
-                continue
-
-        elif algorithm_name == "k-nearest-neighbors":
-            # Ensure the target variable is categorical for KNN classification
-            if pd.api.types.is_numeric_dtype(data[target_variable]):
-                unique_values = data[target_variable].nunique()
-                if unique_values > 10:
-                    print("\n" + "*" * 20 + "\n")
-                    print(f"*** The selected target variable '{target_variable}' is continuous and not suitable for k-nearest neighbors classification. ***")
-                    print("*** Please select a different algorithm or choose a categorical target variable. ***")
-                    continue
+        if not validator.validate_algorithm_suitability(data, target_variable, algorithm_name):
+            return
 
         folder_route = algorithm_name + "/"
 
