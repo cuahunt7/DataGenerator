@@ -71,6 +71,16 @@ st.markdown("""
     .stTextInput label {
         color: #0055A2;
     }
+
+    /* Custom success and error message styles */
+    .custom-success {
+        color: green;
+        font-weight: bold;
+    }
+    .custom-error {
+        color: red;
+        font-weight: bold;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -83,6 +93,15 @@ if 'id_token' not in st.session_state:
     st.session_state['id_token'] = ''
 if 'menu' not in st.session_state:
     st.session_state['menu'] = 'Home'
+
+def password_requirements(password):
+    if (len(password) < 8 or
+        not re.search(r"\d", password) or
+        not re.search(r"[A-Z]", password) or
+        not re.search(r"[a-z]", password) or
+        not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password)):
+        return False
+    return True
 
 def main():
     st.title('Dataset Generator')
@@ -131,6 +150,8 @@ def main():
             if st.button("Signup", key="signup_page_signup"):
                 if new_password != confirm_password:
                     st.error("Passwords do not match")
+                elif not password_requirements(new_password):
+                    st.error("Password must be at least 8 characters long, contain at least 1 number, 1 special character, 1 uppercase letter, and 1 lowercase letter.")
                 else:
                     response = signup_user(new_email, new_password)
                     if response:
@@ -138,6 +159,7 @@ def main():
                     else:
                         st.error("Failed to create account")
 
+                        
     col1, col2, col3 = st.columns(3)
     with col1:
         st.header('Fill Out the Form')
@@ -155,7 +177,7 @@ def main():
         instances = st.selectbox('Number of Instances:', ['', 'less than 500', '500 or more'])
         topic = st.selectbox('Dataset Topic:', ['', 'Health', 'Finance', 'Education', 'Technology', 'Entertainment'])
         cleanliness = st.selectbox('Data Cleanliness:', ['', 'Clean', 'Unclean'])
-        submit_button = st.form_submit_button('Generate Dataset')
+        submit_button = st.form_submit_button('Generate Dataset', disabled=not st.session_state['logged_in'])
 
     if submit_button:
         if algorithm and features and instances and topic:
