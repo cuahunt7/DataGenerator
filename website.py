@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import logging
-from web_implementation import generate_presigned_url, fetch_dataset_metadata, make_dataset_unclean
-from user import signup_user, authenticate_user
+from web_implementation import generate_presigned_url, fetch_dataset_metadata, make_dataset_unclean, password_requirements
+from user_auth import signup_user, authenticate_user
 
 # Custom styles
 st.markdown("""
@@ -74,12 +74,18 @@ st.markdown("""
 
     /* Custom success and error message styles */
     .custom-success {
-        color: green;
+        color: white;
         font-weight: bold;
+        background-color: #28a745; /* Bootstrap success green */
+        padding: 10px;
+        border-radius: 5px;
     }
     .custom-error {
-        color: red;
+        color: white;
         font-weight: bold;
+        background-color: #dc3545; /* Bootstrap danger red */
+        padding: 10px;
+        border-radius: 5px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -93,15 +99,6 @@ if 'id_token' not in st.session_state:
     st.session_state['id_token'] = ''
 if 'menu' not in st.session_state:
     st.session_state['menu'] = 'Home'
-
-def password_requirements(password):
-    if (len(password) < 8 or
-        not re.search(r"\d", password) or
-        not re.search(r"[A-Z]", password) or
-        not re.search(r"[a-z]", password) or
-        not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password)):
-        return False
-    return True
 
 def main():
     st.title('Dataset Generator')
@@ -139,9 +136,9 @@ def main():
                     st.session_state['logged_in'] = True
                     st.session_state['email'] = email
                     st.session_state['id_token'] = response['AuthenticationResult']['IdToken']
-                    st.success(f'Welcome, {email}!')
+                    st.markdown(f'<div class="custom-success">Welcome, {email}!</div>', unsafe_allow_html=True)
                 else:
-                    st.error("Invalid email or password")
+                    st.markdown('<div class="custom-error">Invalid email or password</div>', unsafe_allow_html=True)
         elif st.session_state['menu'] == "Signup":
             st.subheader("Create New Account")
             new_email = st.text_input("Email", key="new_email")
@@ -149,15 +146,15 @@ def main():
             confirm_password = st.text_input("Confirm Password", type='password', key="confirm_password")
             if st.button("Signup", key="signup_page_signup"):
                 if new_password != confirm_password:
-                    st.error("Passwords do not match")
+                    st.markdown('<div class="custom-error">Passwords do not match</div>', unsafe_allow_html=True)
                 elif not password_requirements(new_password):
-                    st.error("Password must be at least 8 characters long, contain at least 1 number, 1 special character, 1 uppercase letter, and 1 lowercase letter.")
+                    st.markdown('<div class="custom-error">Password must be at least 8 characters long, contain at least 1 number, 1 special character, 1 uppercase letter, and 1 lowercase letter.</div>', unsafe_allow_html=True)
                 else:
                     response = signup_user(new_email, new_password)
                     if response:
-                        st.success(f"Account created successfully for {new_email}")
+                        st.markdown(f'<div class="custom-success">Account created successfully for {new_email}</div>', unsafe_allow_html=True)
                     else:
-                        st.error("Failed to create account")
+                        st.markdown('<div class="custom-error">Failed to create account</div>', unsafe_allow_html=True)
 
                         
     col1, col2, col3 = st.columns(3)
@@ -201,13 +198,13 @@ def main():
                     dataset_preview = pd.read_csv(dataset_link)
                     if cleanliness == 'Unclean':
                         dataset_preview = make_dataset_unclean(dataset_preview)
-                    st.dataframe(dataset_preview.head(50))
+                    st.dataframe(dataset_preview.head(51))
                 else:
-                    st.error("Failed to generate a download link. Please try again.")
+                    st.markdown('<div class="custom-error">Failed to generate a download link. Please try again.</div>', unsafe_allow_html=True)
             else:
-                st.error("No matching dataset found. Please adjust your selection criteria.")
+                st.markdown('<div class="custom-error">No matching dataset found. Please adjust your selection criteria.</div>', unsafe_allow_html=True)
         else:
-            st.error("Please fill in all the fields.")
+            st.markdown('<div class="custom-error">Please fill in all the fields.</div>', unsafe_allow_html=True)
 
     st.subheader('About')
     st.write('Our platform is designed to assist students and researchers in finding datasets for their machine learning experiments. By streamlining the process with powerful search functionalities, we aim to provide accurate and meaningful results.')

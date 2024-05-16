@@ -106,3 +106,12 @@ def fetch_dataset_metadata(input_algorithm, features, instances, topic, cleanlin
     except Exception as e:
         logging.error(f"Error fetching data from DynamoDB: {e}")
         return []
+
+def password_requirements(password):
+    if (len(password) < 8 or
+        not re.search(r"\d", password) or
+        not re.search(r"[A-Z]", password) or
+        not re.search(r"[a-z]", password) or
+        not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password)):
+        return False
+    return True
