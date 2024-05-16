@@ -1,9 +1,37 @@
 # DataGenerator
-A web application that generates a customised dataset based on the user needs
+Welcome to Dataset Generator!
 
-<!-- **Introduction** -->
+Dataset Generator is a web application designed to enhance the learning experience of students and enthusiasts in the field of machine learning. This platform provides customized datasets tailored to users' interests and the specific algorithms they want to explore. By leveraging a vast repository of pre-collected datasets and the capability to generate synthetic datasets, the application ensures that users always have access to the data needed.
+Features
 
-Welcome to Dataset Generator! Before you run the application, you need to set up a few things. This document will guide you through the process of configuring your environment with necessary credentials and settings.
+* Customized Datasets: Users can specify parameters such as the number of features, the number of instances, topics of interest, and the machine learning algorithm they wish to use.
+* Extensive Dataset Repository: The application has access to a large collection of validated datasets across various topics, stored securely in Amazon S3.
+* Synthetic Dataset Generation: If a requested topic is not available in the repository, the application can generate a synthetic dataset that meets the user's criteria using advanced data generation techniques.
+* User-Friendly Interface: The intuitive interface allows users to easily navigate through the platform and quickly obtain the datasets they need.
+* Educational Focus: The platform is designed to support learning and experimentation, making it ideal for students, educators, or anyone who wants to learn machine learning.
+
+Detailed Description
+
+The Machine Learning Dataset Generator aims to solve a common problem faced by students and learners in the field of machine learning: accessing relevant and appropriately sized datasets for practice and experimentation. Whether a user is looking to practice linear regression, classification, clustering, or any other machine learning algorithm, this application provides datasets that fit their requirements.
+
+How It Works
+
+1. User Input: Users start by entering specific details about the dataset they need. These details include:
+    - Number of Features: The dimensionality of the dataset (e.g., 10 features).
+    - Number of Instances: The number of data points or samples in the dataset (e.g., 1000 instances).
+    - Topics of Interest: The subject matter or domain of the dataset (e.g., healthcare, finance, sports).
+    - Machine Learning Algorithm: The algorithm they plan to use (e.g., linear regression, decision trees, neural networks).
+
+2. Validation Check: Upon receiving the input, the application checks the existing dataset repository in Amazon S3 to find a match that fits the criteria.
+    - Dataset Available: If a suitable dataset is found, it is retrieved and prepared for the user.
+    - Dataset Not Available: If no suitable dataset is found, the application dynamically generates a synthetic dataset using predefined data generation algorithms to meet the user's specifications.
+
+3. Dataset Delivery: The finalized dataset is then made available for download, allowing users to immediately start their machine learning experiments.
+
+
+Installation
+
+Before you run the application, you need to set up a few things. This document will guide you through the process of configuring your environment with necessary credentials and settings.
 Prerequisites
 
     Python 3.12 installed
@@ -52,7 +80,7 @@ pip3 install -r requirements.txt
 
 Now, you are ready to run the application:
 ```bash
-python3 main.py
+python3 website.py
 ```
 
 
