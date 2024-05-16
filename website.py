@@ -4,9 +4,11 @@ import logging
 from web_implementation import generate_presigned_url, fetch_dataset_metadata, make_dataset_unclean, password_requirements
 from user_auth import signup_user, authenticate_user
 from dataset_gen import main as generate_synthetic_dataset
-from datetime import datetime
 
-# Custom styles
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Custom styles for Streamlit app
 st.markdown("""
     <style>
     body {
@@ -102,6 +104,7 @@ if 'id_token' not in st.session_state:
 if 'menu' not in st.session_state:
     st.session_state['menu'] = 'Home'
 
+# Main function for the Streamlit app
 def main():
     st.title('Dataset Generator')
 
@@ -182,7 +185,7 @@ def main():
         if algorithm and features and instances and topic:
             metadata = fetch_dataset_metadata(algorithm, features, instances, topic, cleanliness)
             if metadata:
-                selected_metadata = metadata[0]  # Assuming one matching dataset is found
+                selected_metadata = metadata[0]
                 dataset_link = generate_presigned_url('capstonedatasets', selected_metadata['S3ObjectKey'])
                 if dataset_link:
                     # Display metadata
@@ -204,12 +207,9 @@ def main():
                 else:
                     st.markdown('<div class="custom-error">Failed to generate a download link. Please try again.</div>', unsafe_allow_html=True)
             else:
-                # Generate synthetic dataset
-                object_key = generate_synthetic_dataset(algorithm, instances, features)
-                
-                # Generate presigned URL for the synthetic dataset
+                object_key = generate_synthetic_dataset(algorithm, instances, features, st.session_state['id_token'])
                 dataset_link = generate_presigned_url('capstonedatasets', object_key)
-                
+
                 if dataset_link:
                     st.markdown(f"**Dataset Name:** Synthetic Dataset")
                     st.markdown(f"**Machine Learning Task:** {algorithm}")
@@ -217,7 +217,6 @@ def main():
                     st.markdown(f"**Number of Features:** {9 if features == 'less than 10' else 10}")
                     st.markdown(f"**Number of Instances:** {499 if instances == 'less than 500' else 501}")
                     st.markdown(f"**Target Variable:** Target")
-                    st.markdown(f"**Topic:** {topic}")
 
                     # Display dataset preview (first 50 rows)
                     dataset_preview = pd.read_csv(dataset_link)
@@ -234,4 +233,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

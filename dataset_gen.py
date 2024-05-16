@@ -85,6 +85,8 @@ def knn_dataset(column_counts=9, row_counts=1000):
     X['Target'] = y
 
     return X
+
+# Function to generate a dataset based on the specified algorithm
 def dataset_generator(algorithm, size, features):
     # Determine the number of rows based on size
     row_counts = 499 if size == "less than 500" else 501
@@ -102,23 +104,20 @@ def dataset_generator(algorithm, size, features):
     else:
         raise ValueError(f"Unsupported algorithm specified: {algorithm}")
 
-
-def main(algorithm, size, features):
+# Main function to generate and validate a synthetic dataset
+def main(algorithm, size, features, id_token):
     print("Validating the Synthetic Dataset")
     while True:
         data = dataset_generator(algorithm, size, features)
-        mode = "auto"
-        path = f"Synthetic/Data/Synthetic_Dataset_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+        path = f"Synthetic_Dataset_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"
         target_variable = 'Target'
         algorithm_index = data.columns.get_loc(target_variable)
         algorithm_name = algorithm.lower().replace(" ", "-")
-        algorithm = {1: "linear-regression", 2: "random-forest", 3: "k-nearest-neighbors"}
-        algorithm_index = next((key for key, value in algorithm.items() if value == algorithm_name), None)
-        folder_route = algorithm_name + "/"
-        # clean_df, valid = validator(data, algorithm_index, target_variable)
+        algorithm_map = {1: "linear-regression", 2: "random-forest", 3: "k-nearest-neighbors"}
+        algorithm_index = next((key for key, value in algorithm_map.items() if value == algorithm_name), None)
         clean_df, valid = validator.validator(data, algorithm_index, target_variable)
         if valid:
-            object_key = upload_csv_to_s3(clean_df, "capstonedatasets", folder_route, path)
+            object_key = upload_csv_to_s3(clean_df, "capstonedatasets", "", path, is_synthetic=True, id_token=id_token)
             if object_key:
                 print(f"*** Dataset uploaded successfully. ***")
                 return object_key  # Return the object key

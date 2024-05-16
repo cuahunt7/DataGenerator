@@ -1,3 +1,4 @@
+import re
 import boto3
 from boto3.dynamodb.conditions import Attr
 import pandas as pd
@@ -28,14 +29,14 @@ dynamodb = boto3.resource(
 )
 AWS_S3_BUCKET = os.getenv('AWS_S3_BUCKET')
 
-# Helper functions
+# Presigned URL function
 def generate_presigned_url(bucket_name, object_key, expiration=3600):
     try:
         response = s3_client.generate_presigned_url('get_object',
                                                     Params={'Bucket': bucket_name, 'Key': object_key},
                                                     ExpiresIn=expiration)
         return response
-    except Exception as e:
+    except ClientError as e:
         logging.error(f"Error generating presigned URL: {e}")
         return None
 
