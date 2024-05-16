@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import logging
 from web_implementation import generate_presigned_url, fetch_dataset_metadata, make_dataset_unclean
-from user import signup_user, authenticate_user
+from user_auth import signup_user, authenticate_user
 
 # Custom styles
 st.markdown("""
