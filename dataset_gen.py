@@ -1,9 +1,9 @@
+# Import necessary modules
 import numpy as np
 import pandas as pd
-import os
 from datetime import datetime
-import validator
 from database import upload_csv_to_s3
+import validator
 
 
 def linear_regression_dataset(column_counts=9, row_counts=1000):
@@ -121,7 +121,7 @@ def main(algorithm, size, features):
             object_key = upload_csv_to_s3(clean_df, "capstonedatasets", folder_route, path)
             if object_key:
                 print(f"*** Dataset uploaded successfully. ***")
-                break  # Exit the loop since validation passed and file is uploaded
+                return object_key  # Return the object key
             else:
                 print("*** Generating New Synthetic Dataset ***")
         else:

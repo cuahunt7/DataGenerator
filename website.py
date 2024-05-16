@@ -3,6 +3,8 @@ import pandas as pd
 import logging
 from web_implementation import generate_presigned_url, fetch_dataset_metadata, make_dataset_unclean, password_requirements
 from user_auth import signup_user, authenticate_user
+from dataset_gen import main as generate_synthetic_dataset
+from datetime import datetime
 
 # Custom styles
 st.markdown("""
@@ -202,7 +204,28 @@ def main():
                 else:
                     st.markdown('<div class="custom-error">Failed to generate a download link. Please try again.</div>', unsafe_allow_html=True)
             else:
-                st.markdown('<div class="custom-error">No matching dataset found. Please adjust your selection criteria.</div>', unsafe_allow_html=True)
+                # Generate synthetic dataset
+                object_key = generate_synthetic_dataset(algorithm, instances, features)
+                
+                # Generate presigned URL for the synthetic dataset
+                dataset_link = generate_presigned_url('capstonedatasets', object_key)
+                
+                if dataset_link:
+                    st.markdown(f"**Dataset Name:** Synthetic Dataset")
+                    st.markdown(f"**Machine Learning Task:** {algorithm}")
+                    st.markdown(f"**Download Link:** [Download Dataset]({dataset_link})")
+                    st.markdown(f"**Number of Features:** {9 if features == 'less than 10' else 10}")
+                    st.markdown(f"**Number of Instances:** {499 if instances == 'less than 500' else 501}")
+                    st.markdown(f"**Target Variable:** Target")
+                    st.markdown(f"**Topic:** {topic}")
+
+                    # Display dataset preview (first 50 rows)
+                    dataset_preview = pd.read_csv(dataset_link)
+                    if cleanliness == 'Unclean':
+                        dataset_preview = make_dataset_unclean(dataset_preview)
+                    st.dataframe(dataset_preview.head(51))
+                else:
+                    st.markdown('<div class="custom-error">Failed to generate a download link. Please try again.</div>', unsafe_allow_html=True)
         else:
             st.markdown('<div class="custom-error">Please fill in all the fields.</div>', unsafe_allow_html=True)
 
@@ -211,3 +234,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
