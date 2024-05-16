@@ -2,9 +2,6 @@ import boto3
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
-
 def extract_and_upload_metadata(data, algorithm_name, bucket_name, file_path, object_key, target_variable):
     """Extract metadata from the dataset and upload it to DynamoDB."""
     dynamodb = boto3.resource('dynamodb',
@@ -37,4 +34,3 @@ def extract_and_upload_metadata(data, algorithm_name, bucket_name, file_path, ob
         print("Metadata uploaded successfully to DynamoDB.")
     except Exception as e:
         print(f"Failed to upload metadata: {e}")
-

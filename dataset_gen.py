@@ -1,9 +1,12 @@
 import numpy as np
 import pandas as pd
+import os
+from datetime import datetime
+import validator
+from database import upload_csv_to_s3
 
 
 def linear_regression_dataset(column_counts=9, row_counts=1000):
-    np.random.seed(42)
     features = []
     
     # Generate features dynamically based on column_counts
@@ -31,7 +34,6 @@ def linear_regression_dataset(column_counts=9, row_counts=1000):
 
 # ***************************************************************
 def random_forest_dataset(column_counts=9, row_counts=1000):
-    np.random.seed(42)
     features = []
     
     # Generate features dynamically based on column_counts
@@ -59,7 +61,6 @@ def random_forest_dataset(column_counts=9, row_counts=1000):
 # **************************
 
 def knn_dataset(column_counts=9, row_counts=1000):
-    np.random.seed(42)
     features = []
     
     # Generate features dynamically based on column_counts
@@ -100,7 +101,28 @@ def dataset_generator(algorithm, size, features):
         return knn_dataset(column_counts=column_counts, row_counts=row_counts)
     else:
         raise ValueError(f"Unsupported algorithm specified: {algorithm}")
-    
 
 
-    
+def main(algorithm, size, features):
+    print("Validating the Synthetic Dataset")
+    while True:
+        data = dataset_generator(algorithm, size, features)
+        mode = "auto"
+        path = f"Synthetic/Data/Synthetic_Dataset_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+        target_variable = 'Target'
+        algorithm_index = data.columns.get_loc(target_variable)
+        algorithm_name = algorithm.lower().replace(" ", "-")
+        algorithm = {1: "linear-regression", 2: "random-forest", 3: "k-nearest-neighbors"}
+        algorithm_index = next((key for key, value in algorithm.items() if value == algorithm_name), None)
+        folder_route = algorithm_name + "/"
+        # clean_df, valid = validator(data, algorithm_index, target_variable)
+        clean_df, valid = validator.validator(data, algorithm_index, target_variable)
+        if valid:
+            object_key = upload_csv_to_s3(clean_df, "capstonedatasets", folder_route, path)
+            if object_key:
+                print(f"*** Dataset uploaded successfully. ***")
+                break  # Exit the loop since validation passed and file is uploaded
+            else:
+                print("*** Generating New Synthetic Dataset ***")
+        else:
+            print("*** Dataset validation failed ***")
