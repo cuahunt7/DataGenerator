@@ -10,10 +10,6 @@ Features
 * User-Friendly Interface: The intuitive interface allows users to easily navigate through the platform and quickly obtain the datasets they need.
 * Educational Focus: The platform is designed to support learning and experimentation, making it ideal for students, educators, or anyone who wants to learn machine learning.
 
-Detailed Description
-
-The Machine Learning Dataset Generator aims to solve a common problem faced by students and learners in the field of machine learning: accessing relevant and appropriately sized datasets for practice and experimentation. Whether a user is looking to practice linear regression, classification, clustering, or any other machine learning algorithm, this application provides datasets that fit their requirements.
-
 How It Works
 
 1. User Input: Users start by entering specific details about the dataset they need. These details include:
