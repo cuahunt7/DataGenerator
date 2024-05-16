@@ -15,8 +15,8 @@ How It Works
 1. User Input: Users start by entering specific details about the dataset they need. These details include:
     - Number of Features: The dimensionality of the dataset (e.g., 10 features).
     - Number of Instances: The number of data points or samples in the dataset (e.g., 1000 instances).
-    - Topics of Interest: The subject matter or domain of the dataset (e.g., healthcare, finance, sports).
-    - Machine Learning Algorithm: The algorithm they plan to use (e.g., linear regression, decision trees, neural networks).
+    - Topics of Interest: The subject matter or domain of the dataset (e.g., entertainment, finance, education).
+    - Machine Learning Algorithm: The algorithm they plan to use (e.g., linear regression, random forest, k-nearest neighbors).
 
 2. Validation Check: Upon receiving the input, the application checks the existing dataset repository in Amazon S3 to find a match that fits the criteria.
     - Dataset Available: If a suitable dataset is found, it is retrieved and prepared for the user.
