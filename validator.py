@@ -256,6 +256,23 @@ def dynamic_preprocess(data, target_variable=None, correlation_threshold=0.85):
 
     return clean_df, processed_df
 
+
+
+def validate_algorithm_suitability(data, target_variable, algorithm_name):
+    if algorithm_name in ["random-forest", "k-nearest-neighbors"]:
+        if pd.api.types.is_numeric_dtype(data[target_variable]):
+            unique_values = data[target_variable].nunique()
+            if unique_values > 10:
+                print(f"*** The selected target variable '{target_variable}' is continuous and not suitable for {algorithm_name}. ***")
+                print("*** Please select a different algorithm or choose a categorical target variable. ***")
+                return False
+    elif algorithm_name == "linear-regression":
+        if not pd.api.types.is_numeric_dtype(data[target_variable]):
+            print(f"*** The selected target variable '{target_variable}' is not continuous and not suitable for linear regression. ***")
+            print("*** Please select a different algorithm or choose a continuous target variable. ***")
+            return False
+    return True
+
 def validator(data, algorithm_index, target_variable):
     constant_columns = [col for col in data.columns if data[col].nunique() == 1]
     data.drop(constant_columns, axis=1, inplace=True)
@@ -273,3 +290,5 @@ def validator(data, algorithm_index, target_variable):
         return clean_df, validate_random_forest(X_train, X_test, y_train, y_test)
     elif algorithm_index == 3:
         return clean_df, validate_knn(X_train, X_test, y_train, y_test)
+    
+
